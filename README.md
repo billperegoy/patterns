@@ -124,8 +124,31 @@ product or price or if we have a database glitch.
 So how can we ensure that we never have this situation occur? Or how can we
 recover if we do have this issue?
 
+### Using Database Transactions
+In order to keep the database from being corrupted if both inserts do not work.
+We need a database transaction. Ecto supports this in a nice way by using
+`Ecto.Multi`. This allows you to compose a number of individual database actions
+and pipe them into `Multi.Transaction.`
 
+```
+def create_product(attrs) do
+  with {:ok, %{product: product}} <-
+         Multi.new()
+         |> Multi.insert(:product, Product.changeset(%Product{}, attrs))
+         |> Multi.insert(:price, fn %{product: product} ->
+           Price.changeset(%Price{}, Map.put(attrs, :product_id, product.id))
+         end)
+         |> Repo.transaction() do
+    {:ok, Repo.preload(product, :prices)}
+  end
+end
+```
 
-
+This works great. We have eliminated the possibility of inconsistent database
+entries. But now we have a new requirement. When we preload all of the prices,
+we take a performance hit (there may be hundreds of price changes for a
+product). And we still have no idea what the most recent price is. In order to
+solve this problem, we need a `current_price` pointer that can be preloaded to
+give us the most recent price (which is used almost 100% of the time).
 
 
