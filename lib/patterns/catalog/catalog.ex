@@ -2,8 +2,8 @@ defmodule Patterns.Catalog do
   alias Patterns.{Catalog, Repo}
   alias Catalog.{Price, Product}
 
-  def create_product_and_price(attrs) do
-    with {:ok, product} <- create_product(attrs),
+  def create_product(attrs) do
+    with {:ok, product} <- create_product_without_price(attrs),
          {:ok, _price} <- create_price(Map.put(attrs, :product_id, product.id)) do
       {:ok, Repo.preload(product, :prices)}
     end
@@ -15,7 +15,7 @@ defmodule Patterns.Catalog do
     end
   end
 
-  defp create_product(attrs) do
+  defp create_product_without_price(attrs) do
     %Product{}
     |> Product.changeset(attrs)
     |> Repo.insert()
