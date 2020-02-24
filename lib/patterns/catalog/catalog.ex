@@ -1,17 +1,11 @@
 defmodule Patterns.Catalog do
-  alias Patterns.{Catalog, Repo}
+  alias Patterns.Catalog
   alias Catalog.{Price, Product}
-  alias Ecto.Multi
 
-  def create_product(attrs) do
-    with {:ok, %{product: product}} <-
-           Multi.new()
-           |> Multi.insert(:product, Product.changeset(%Product{}, attrs))
-           |> Multi.insert(:price, fn %{product: product} ->
-             Price.changeset(%Price{}, Map.put(attrs, :product_id, product.id))
-           end)
-           |> Repo.transaction() do
-      {:ok, Repo.preload(product, :prices)}
-    end
-  end
+  import Patterns.Revisable
+
+  derive_revisable("product",
+    parent: %{type: %Product{}, changeset: &Product.changeset/2},
+    revision: %{type: %Price{}, changeset: &Price.changeset/2}
+  )
 end
