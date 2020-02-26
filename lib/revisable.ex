@@ -15,8 +15,8 @@ defmodule Patterns.Revisable do
                Multi.new()
                |> Multi.insert(:parent, parent_changeset.(parent_type, attrs))
                |> Multi.insert(:revision, fn %{parent: parent} ->
-                 # FIXME - can we derive the FK name? (product_id)
-                 revision_changeset.(revision_type, Map.put(attrs, :product_id, parent.id))
+                 parent_id_atom = String.to_atom("#{unquote(name)}_id")
+                 revision_changeset.(revision_type, Map.put(attrs, parent_id_atom, parent.id))
                end)
                |> Repo.transaction() do
           # FIXME - Can we use a generic name (:revisions)
